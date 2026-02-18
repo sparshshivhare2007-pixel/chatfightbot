@@ -1,5 +1,6 @@
 from pyrogram import filters
 from pyrogram.handlers import MessageHandler
+from pyrogram.enums import ParseMode
 from services.leaderboard_service import get_user_groups
 
 
@@ -16,7 +17,10 @@ async def mytop_cmd(client, message):
     for i, (group_name, total) in enumerate(data, start=1):
         text += f"{i}. {group_name} • {total}\n"
 
-    await message.reply(text, parse_mode="HTML")
+    await message.reply(
+        text,
+        parse_mode=ParseMode.HTML
+    )
 
 
 mytop_handler = MessageHandler(
