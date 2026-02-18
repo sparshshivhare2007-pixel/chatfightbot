@@ -2,6 +2,7 @@ from pymongo import MongoClient, ASCENDING, DESCENDING
 from config import MONGO_URI
 from datetime import datetime, timedelta
 import pytz
+import redis
 
 # =========================
 # Mongo Connection
@@ -14,6 +15,17 @@ messages_col = db["messages"]
 users_col = db["users"]
 groups_col = db["groups"]
 events_col = db["events"]
+
+# =========================
+# Redis Connection (ADDED)
+# =========================
+
+redis_client = redis.Redis(
+    host="localhost",
+    port=6379,
+    db=0,
+    decode_responses=True
+)
 
 # =========================
 # Indexes (Optimized)
@@ -211,7 +223,7 @@ def get_user_groups_stats(user_id: int, mode="overall"):
     return [(r["_id"], r["total"]) for r in results]
 
 # =========================
-# USER GLOBAL TOTALS (ALL GROUPS)
+# USER GLOBAL TOTALS
 # =========================
 
 def get_user_total_messages(user_id: int, mode="overall"):
