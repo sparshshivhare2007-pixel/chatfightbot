@@ -1,6 +1,6 @@
-from services.leaderboard_service import (
-    get_group_top,
-    get_global_top,
+from database import (
+    get_leaderboard,
+    get_global_leaderboard,
     get_top_groups
 )
 from services.formatting_service import format_leaderboard
@@ -15,15 +15,15 @@ async def handle_ranking_toggle(client, callback_query):
     target_id = int(target_id)
 
     if scope == "group":
-        leaderboard = await get_group_top(target_id, mode)
+        leaderboard = get_leaderboard(target_id, mode)
         title = "GROUP LEADERBOARD"
 
     elif scope == "global":
-        leaderboard = await get_global_top(mode)
+        leaderboard = get_global_leaderboard(mode)
         title = "GLOBAL LEADERBOARD"
 
     else:  # groups
-        leaderboard = await get_top_groups(mode)
+        leaderboard = get_top_groups(mode)
         title = "TOP GROUPS"
 
     text = await format_leaderboard(leaderboard, title)
