@@ -1,4 +1,4 @@
-from database.connection import redis_client
+from database import redis_client
 from database.user_stats import update_user_group
 from database.group_stats import update_group
 from database.global_stats import update_global
