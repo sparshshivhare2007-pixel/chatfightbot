@@ -2,6 +2,27 @@ from database.connection import db
 from datetime import datetime, timedelta
 
 
+# ---------- Helper ----------
+async def resolve_user(user_id):
+    user = await db.users.find_one({"user_id": user_id})
+    if not user:
+        return str(user_id)
+
+    if user.get("username"):
+        return f"@{user['username']}"
+
+    return user.get("full_name", str(user_id))
+
+
+async def resolve_group(group_id):
+    group = await db.groups.find_one({"group_id": group_id})
+    if not group:
+        return str(group_id)
+
+    return group.get("title", str(group_id))
+
+
+# ---------- GROUP LEADERBOARD ----------
 async def get_group_top(group_id, mode):
 
     query = {"group_id": group_id}
@@ -26,10 +47,17 @@ async def get_group_top(group_id, mode):
         {"$limit": 10}
     ]
 
-    result = db.messages.aggregate(pipeline)
-    return [(doc["_id"], doc["total"]) async for doc in result]
+    result = []
+    cursor = db.messages.aggregate(pipeline)
+
+    async for doc in cursor:
+        username = await resolve_user(doc["_id"])
+        result.append((username, doc["total"]))
+
+    return result
 
 
+# ---------- GLOBAL USER LEADERBOARD ----------
 async def get_global_top(mode):
 
     query = {}
@@ -54,10 +82,17 @@ async def get_global_top(mode):
         {"$limit": 10}
     ]
 
-    result = db.messages.aggregate(pipeline)
-    return [(doc["_id"], doc["total"]) async for doc in result]
+    result = []
+    cursor = db.messages.aggregate(pipeline)
+
+    async for doc in cursor:
+        username = await resolve_user(doc["_id"])
+        result.append((username, doc["total"]))
+
+    return result
 
 
+# ---------- TOP GROUPS ----------
 async def get_top_groups(mode):
 
     query = {}
@@ -82,10 +117,17 @@ async def get_top_groups(mode):
         {"$limit": 10}
     ]
 
-    result = db.messages.aggregate(pipeline)
-    return [(doc["_id"], doc["total"]) async for doc in result]
+    result = []
+    cursor = db.messages.aggregate(pipeline)
+
+    async for doc in cursor:
+        title = await resolve_group(doc["_id"])
+        result.append((title, doc["total"]))
+
+    return result
 
 
+# ---------- MY TOP GROUPS ----------
 async def get_user_groups(user_id):
 
     pipeline = [
@@ -100,5 +142,11 @@ async def get_user_groups(user_id):
         {"$limit": 10}
     ]
 
-    result = db.messages.aggregate(pipeline)
-    return [(doc["_id"], doc["total"]) async for doc in result]
+    result = []
+    cursor = db.messages.aggregate(pipeline)
+
+    async for doc in cursor:
+        title = await resolve_group(doc["_id"])
+        result.append((title, doc["total"]))
+
+    return result
