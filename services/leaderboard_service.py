@@ -1,175 +1,80 @@
-from database.connection import db
-from datetime import datetime, timedelta
-from pyrogram.errors import RPCError
+from database import (
+    get_leaderboard,
+    get_global_leaderboard,
+    get_user_groups_stats,
+    get_top_groups as db_get_top_groups,
+    get_user_info,
+    get_group_info
+)
 
 
-# ---------- Resolve User (Live + Fallback) ----------
-async def resolve_user(client, user_id):
+# =========================
+# GROUP LEADERBOARD
+# =========================
 
-    try:
-        user = await client.get_users(user_id)
+async def get_group_top(group_id: int, mode: str):
 
-        if user.username:
-            name = f"@{user.username}"
-        else:
-            name = user.first_name or str(user_id)
-
-        return f"<a href='tg://user?id={user_id}'>{name}</a>"
-
-    except RPCError:
-        # Fallback Mongo
-        user = await db.users.find_one({"user_id": user_id})
-        if not user:
-            return str(user_id)
-
-        name = user.get("username") or user.get("full_name") or str(user_id)
-        return f"<a href='tg://user?id={user_id}'>{name}</a>"
-
-
-# ---------- Resolve Group (Live + Fallback) ----------
-async def resolve_group(client, group_id):
-
-    try:
-        chat = await client.get_chat(group_id)
-        return chat.title
-
-    except:
-        group = await db.groups.find_one({"group_id": group_id})
-        if not group:
-            return str(group_id)
-
-        return group.get("title", str(group_id))
-
-
-# ---------- GROUP LEADERBOARD ----------
-async def get_group_top(client, group_id, mode):
-
-    group_id = int(group_id)
-
-    query = {"group_id": group_id}
-
-    if mode == "today":
-        today = datetime.utcnow().strftime("%Y-%m-%d")
-        query["date"] = today
-
-    elif mode == "week":
-        week_ago = datetime.utcnow() - timedelta(days=7)
-        query["date"] = {"$gte": week_ago.strftime("%Y-%m-%d")}
-
-    pipeline = [
-        {"$match": query},
-        {
-            "$group": {
-                "_id": "$user_id",
-                "total": {"$sum": "$count"}
-            }
-        },
-        {"$sort": {"total": -1}},
-        {"$limit": 10}
-    ]
+    data = get_leaderboard(group_id, mode)
 
     result = []
-    cursor = db.messages.aggregate(pipeline)
 
-    async for doc in cursor:
-        username = await resolve_user(client, doc["_id"])
-        result.append((username, doc["total"]))
+    for user_id, total in data:
+        user = get_user_info(user_id)
+        name = user["full_name"] if user else "User"
+        result.append((name, total))
 
     return result
 
 
-# ---------- GLOBAL USER LEADERBOARD ----------
-async def get_global_top(client, mode):
+# =========================
+# GLOBAL LEADERBOARD
+# =========================
 
-    query = {}
+async def get_global_top(mode: str):
 
-    if mode == "today":
-        today = datetime.utcnow().strftime("%Y-%m-%d")
-        query["date"] = today
-
-    elif mode == "week":
-        week_ago = datetime.utcnow() - timedelta(days=7)
-        query["date"] = {"$gte": week_ago.strftime("%Y-%m-%d")}
-
-    pipeline = [
-        {"$match": query},
-        {
-            "$group": {
-                "_id": "$user_id",
-                "total": {"$sum": "$count"}
-            }
-        },
-        {"$sort": {"total": -1}},
-        {"$limit": 10}
-    ]
+    data = get_global_leaderboard(mode)
 
     result = []
-    cursor = db.messages.aggregate(pipeline)
 
-    async for doc in cursor:
-        username = await resolve_user(client, doc["_id"])
-        result.append((username, doc["total"]))
+    for user_id, total in data:
+        user = get_user_info(user_id)
+        name = user["full_name"] if user else "User"
+        result.append((name, total))
 
     return result
 
 
-# ---------- TOP GROUPS ----------
-async def get_top_groups(client, mode):
+# =========================
+# USER GROUP STATS
+# =========================
 
-    query = {}
+async def get_user_groups(client, user_id: int, mode="overall"):
 
-    if mode == "today":
-        today = datetime.utcnow().strftime("%Y-%m-%d")
-        query["date"] = today
-
-    elif mode == "week":
-        week_ago = datetime.utcnow() - timedelta(days=7)
-        query["date"] = {"$gte": week_ago.strftime("%Y-%m-%d")}
-
-    pipeline = [
-        {"$match": query},
-        {
-            "$group": {
-                "_id": "$group_id",
-                "total": {"$sum": "$count"}
-            }
-        },
-        {"$sort": {"total": -1}},
-        {"$limit": 10}
-    ]
+    data = get_user_groups_stats(user_id, mode)
 
     result = []
-    cursor = db.messages.aggregate(pipeline)
 
-    async for doc in cursor:
-        title = await resolve_group(client, doc["_id"])
-        result.append((title, doc["total"]))
+    for group_id, total in data:
+        group = get_group_info(group_id)
+        title = group["title"] if group else "Group"
+        result.append((title, total))
 
     return result
 
 
-# ---------- MY TOP GROUPS ----------
-async def get_user_groups(client, user_id):
+# =========================
+# TOP GROUPS
+# =========================
 
-    user_id = int(user_id)
+async def get_top_groups(mode: str):
 
-    pipeline = [
-        {"$match": {"user_id": user_id}},
-        {
-            "$group": {
-                "_id": "$group_id",
-                "total": {"$sum": "$count"}
-            }
-        },
-        {"$sort": {"total": -1}},
-        {"$limit": 10}
-    ]
+    data = db_get_top_groups(mode)
 
     result = []
-    cursor = db.messages.aggregate(pipeline)
 
-    async for doc in cursor:
-        title = await resolve_group(client, doc["_id"])
-        result.append((title, doc["total"]))
+    for group_id, total in data:
+        group = get_group_info(group_id)
+        title = group["title"] if group else "Group"
+        result.append((title, total))
 
     return result
