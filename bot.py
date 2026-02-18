@@ -2,6 +2,8 @@ import asyncio
 import signal
 import sys
 from pyrogram import Client
+from pyrogram.enums import ParseMode
+
 from config import API_ID, API_HASH, BOT_TOKEN
 from core.router import register_handlers
 from core.scheduler import start_scheduler
@@ -17,13 +19,14 @@ class ChatFightBot:
     async def start(self):
         logger.info("Starting ChatFight Pro...")
 
-        # Create client inside running loop
+        # Create Pyrogram client (v2 compatible)
         self.app = Client(
             "chatfight-pro",
             api_id=API_ID,
             api_hash=API_HASH,
             bot_token=BOT_TOKEN,
             workers=100,
+            parse_mode=ParseMode.HTML  # Default HTML parsing
         )
 
         register_handlers(self.app)
