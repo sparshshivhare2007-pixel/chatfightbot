@@ -1,13 +1,13 @@
 from pyrogram import filters
 from pyrogram.handlers import MessageHandler
 from pyrogram.enums import ParseMode
-from database.connection import get_top_groups, get_group_info
+import database as db
 from ui.keyboards import ranking_keyboard
 
 
 async def topgroups_cmd(client, message):
 
-    data = get_top_groups("overall")
+    data = db.get_top_groups("overall")
 
     if not data:
         await message.reply("📊 No data found.")
@@ -17,7 +17,7 @@ async def topgroups_cmd(client, message):
 
     for i, (group_id, total) in enumerate(data, start=1):
 
-        group_info = get_group_info(group_id)
+        group_info = db.get_group_info(group_id)
 
         if group_info:
             title = group_info.get("title", "Group")
