@@ -1,5 +1,6 @@
 from pyrogram import filters
 from pyrogram.handlers import MessageHandler
+from pyrogram.enums import ParseMode
 from services.leaderboard_service import get_global_top
 from ui.keyboards import ranking_keyboard
 
@@ -21,7 +22,7 @@ async def topusers_cmd(client, message):
     await message.reply(
         text,
         reply_markup=ranking_keyboard("overall", "global", 0),
-        parse_mode="HTML"
+        parse_mode=ParseMode.HTML
     )
 
 
