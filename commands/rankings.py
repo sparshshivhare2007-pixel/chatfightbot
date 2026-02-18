@@ -1,12 +1,13 @@
 from pyrogram import filters
 from pyrogram.handlers import MessageHandler
+from pyrogram.enums import ParseMode
 from services.leaderboard_service import get_group_top
 from ui.keyboards import ranking_keyboard
 
 
 async def rankings_cmd(client, message):
 
-    # v1 compatible group check
+    # group check
     if message.chat.type not in ["group", "supergroup"]:
         await message.reply("❌ This command works only in groups.")
         return
@@ -37,7 +38,7 @@ async def rankings_cmd(client, message):
     await message.reply(
         text,
         reply_markup=ranking_keyboard("overall", "group", group_id),
-        parse_mode="html"   # lowercase for v1
+        parse_mode=ParseMode.HTML
     )
 
 
