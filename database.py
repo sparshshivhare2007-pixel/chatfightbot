@@ -1,5 +1,5 @@
 from pymongo import MongoClient, ASCENDING, DESCENDING
-from config import Config
+from config import MONGO_URI
 from datetime import datetime, timedelta
 import pytz
 
@@ -7,7 +7,7 @@ import pytz
 # Mongo Connection
 # =========================
 
-client = MongoClient(Config.MONGO_URI)
+client = MongoClient(MONGO_URI)
 db = client["chatfight"]
 
 messages_col = db["messages"]
@@ -24,7 +24,6 @@ messages_col.create_index(
     unique=True
 )
 
-# Performance index for leaderboard sorting
 messages_col.create_index(
     [("group_id", ASCENDING), ("date", ASCENDING)]
 )
