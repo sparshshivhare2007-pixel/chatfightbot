@@ -7,7 +7,6 @@ from pyrogram.enums import ParseMode
 from config import API_ID, API_HASH, BOT_TOKEN
 from core.router import register_handlers
 from core.scheduler import start_scheduler
-from database.indexes import create_indexes
 from utils.logger import logger
 
 
@@ -19,18 +18,19 @@ class ChatFightBot:
     async def start(self):
         logger.info("Starting ChatFight Pro...")
 
-        # Create Pyrogram client (v2 compatible)
+        # Create Pyrogram client
         self.app = Client(
             "chatfight-pro",
             api_id=API_ID,
             api_hash=API_HASH,
             bot_token=BOT_TOKEN,
             workers=100,
-            parse_mode=ParseMode.HTML  # Default HTML parsing
+            parse_mode=ParseMode.HTML
         )
 
         register_handlers(self.app)
-        await create_indexes()
+
+        # Scheduler start
         start_scheduler()
 
         await self.app.start()
