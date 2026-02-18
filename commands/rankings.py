@@ -1,20 +1,19 @@
 from pyrogram import filters
 from pyrogram.handlers import MessageHandler
-from pyrogram.enums import ParseMode
-from services.leaderboard_service import get_group_top
+from pyrogram.enums import ChatType, ParseMode
+from database.connection import get_leaderboard, get_user_info
 from ui.keyboards import ranking_keyboard
 
 
 async def rankings_cmd(client, message):
 
-    # group check
-    if message.chat.type not in ["group", "supergroup"]:
+    if message.chat.type not in [ChatType.GROUP, ChatType.SUPERGROUP]:
         await message.reply("❌ This command works only in groups.")
         return
 
-    group_id = int(message.chat.id)
+    group_id = message.chat.id
 
-    data = await get_group_top(client, group_id, "overall")
+    data = get_leaderboard(group_id, "overall")
 
     if not data:
         await message.reply("📊 No ranking data found.")
@@ -22,18 +21,22 @@ async def rankings_cmd(client, message):
 
     text = "🏆 <b>GROUP LEADERBOARD</b>\n\n"
 
-    for i, (username, total) in enumerate(data, start=1):
+    for i, (user_id, total) in enumerate(data, start=1):
 
-        if i == 1:
-            medal = "🥇"
-        elif i == 2:
-            medal = "🥈"
-        elif i == 3:
-            medal = "🥉"
+        user_info = get_user_info(user_id)
+
+        if user_info:
+            name = user_info.get("username")
+            if name:
+                display = f"@{name}"
+            else:
+                display = user_info.get("full_name", "User")
         else:
-            medal = f"{i}."
+            display = "User"
 
-        text += f"{medal} {username} • {total}\n"
+        medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+
+        text += f"{medal} <a href='tg://user?id={user_id}'>{display}</a> • {total}\n"
 
     await message.reply(
         text,
@@ -44,5 +47,5 @@ async def rankings_cmd(client, message):
 
 rankings_handler = MessageHandler(
     rankings_cmd,
-    filters.command("rankings") & filters.group
+    filters.command("rankings")
 )
