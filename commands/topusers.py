@@ -1,13 +1,12 @@
 from pyrogram import filters
 from pyrogram.handlers import MessageHandler
 from pyrogram.enums import ParseMode
-from services.leaderboard_service import get_global_top
-from ui.keyboards import ranking_keyboard
+from database.connection import get_global_leaderboard, get_user_info
 
 
 async def topusers_cmd(client, message):
 
-    data = await get_global_top(client, "overall")
+    data = get_global_leaderboard("overall")
 
     if not data:
         await message.reply("📊 No data found.")
@@ -15,15 +14,24 @@ async def topusers_cmd(client, message):
 
     text = "🌍 <b>GLOBAL LEADERBOARD</b>\n\n"
 
-    for i, (username, total) in enumerate(data, start=1):
-        medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
-        text += f"{medal} {username} • {total}\n"
+    for i, (user_id, total) in enumerate(data, start=1):
 
-    await message.reply(
-        text,
-        reply_markup=ranking_keyboard("overall", "global", 0),
-        parse_mode=ParseMode.HTML
-    )
+        user_info = get_user_info(user_id)
+
+        if user_info:
+            name = user_info.get("username")
+            if name:
+                display = f"@{name}"
+            else:
+                display = user_info.get("full_name", "User")
+        else:
+            display = "User"
+
+        medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+
+        text += f"{medal} <a href='tg://user?id={user_id}'>{display}</a> • {total}\n"
+
+    await message.reply(text, parse_mode=ParseMode.HTML)
 
 
 topusers_handler = MessageHandler(
