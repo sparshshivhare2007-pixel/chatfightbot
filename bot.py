@@ -13,17 +13,19 @@ from utils.logger import logger
 class ChatFightBot:
 
     def __init__(self):
+        self.app = None
+
+    async def start(self):
+        logger.info("Starting ChatFight Pro...")
+
+        # Create client INSIDE running loop
         self.app = Client(
             "chatfight-pro",
             api_id=API_ID,
             api_hash=API_HASH,
             bot_token=BOT_TOKEN,
             workers=100,
-            sleep_threshold=30
         )
-
-    async def start(self):
-        logger.info("Starting ChatFight Pro...")
 
         register_handlers(self.app)
         await create_indexes()
@@ -36,7 +38,8 @@ class ChatFightBot:
 
     async def stop(self):
         logger.info("Stopping ChatFight Pro...")
-        await self.app.stop()
+        if self.app:
+            await self.app.stop()
         logger.info("Bot stopped successfully.")
 
     async def run(self):
@@ -57,11 +60,9 @@ class ChatFightBot:
 
 
 if __name__ == "__main__":
-    # 🔥 Correct uvloop setup (no conflict)
     uvloop.install()
 
     try:
         asyncio.run(ChatFightBot().run())
     except (KeyboardInterrupt, SystemExit):
-        logger.info("Bot exited manually.")
         sys.exit(0)
