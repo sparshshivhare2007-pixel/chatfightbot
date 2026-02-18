@@ -1,12 +1,14 @@
 from pyrogram import filters
 from pyrogram.handlers import MessageHandler
 from pyrogram.enums import ParseMode
-from services.leaderboard_service import get_user_groups
+import database as db
 
 
 async def mytop_cmd(client, message):
 
-    data = await get_user_groups(client, message.from_user.id)
+    user_id = message.from_user.id
+
+    data = db.get_user_groups_stats(user_id, "overall")
 
     if not data:
         await message.reply("📊 No activity data found.")
@@ -14,8 +16,16 @@ async def mytop_cmd(client, message):
 
     text = "🏆 <b>YOUR TOP GROUPS</b>\n\n"
 
-    for i, (group_name, total) in enumerate(data, start=1):
-        text += f"{i}. {group_name} • {total}\n"
+    for i, (group_id, total) in enumerate(data, start=1):
+
+        group_info = db.get_group_info(group_id)
+
+        if group_info:
+            title = group_info.get("title", "Group")
+        else:
+            title = "Group"
+
+        text += f"{i}. {title} • {total}\n"
 
     await message.reply(
         text,
