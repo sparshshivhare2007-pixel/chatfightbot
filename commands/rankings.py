@@ -1,4 +1,4 @@
-=from pyrogram import filters
+from pyrogram import filters
 from pyrogram.handlers import MessageHandler
 from services.leaderboard_service import get_group_top
 from ui.keyboards import ranking_keyboard
