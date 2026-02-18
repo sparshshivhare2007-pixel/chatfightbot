@@ -1,29 +1,50 @@
 from database.connection import db
 from datetime import datetime, timedelta
+from pyrogram.errors import RPCError
 
 
-# ---------- Helper ----------
-async def resolve_user(user_id):
-    user = await db.users.find_one({"user_id": user_id})
-    if not user:
-        return str(user_id)
+# ---------- Resolve User (Live + Fallback) ----------
+async def resolve_user(client, user_id):
 
-    if user.get("username"):
-        return f"@{user['username']}"
+    try:
+        user = await client.get_users(user_id)
 
-    return user.get("full_name", str(user_id))
+        if user.username:
+            name = f"@{user.username}"
+        else:
+            name = user.first_name or str(user_id)
+
+        return f"<a href='tg://user?id={user_id}'>{name}</a>"
+
+    except RPCError:
+        # Fallback Mongo
+        user = await db.users.find_one({"user_id": user_id})
+        if not user:
+            return str(user_id)
+
+        name = user.get("username") or user.get("full_name") or str(user_id)
+        return f"<a href='tg://user?id={user_id}'>{name}</a>"
 
 
-async def resolve_group(group_id):
-    group = await db.groups.find_one({"group_id": group_id})
-    if not group:
-        return str(group_id)
+# ---------- Resolve Group (Live + Fallback) ----------
+async def resolve_group(client, group_id):
 
-    return group.get("title", str(group_id))
+    try:
+        chat = await client.get_chat(group_id)
+        return chat.title
+
+    except:
+        group = await db.groups.find_one({"group_id": group_id})
+        if not group:
+            return str(group_id)
+
+        return group.get("title", str(group_id))
 
 
 # ---------- GROUP LEADERBOARD ----------
-async def get_group_top(group_id, mode):
+async def get_group_top(client, group_id, mode):
+
+    group_id = int(group_id)
 
     query = {"group_id": group_id}
 
@@ -51,14 +72,14 @@ async def get_group_top(group_id, mode):
     cursor = db.messages.aggregate(pipeline)
 
     async for doc in cursor:
-        username = await resolve_user(doc["_id"])
+        username = await resolve_user(client, doc["_id"])
         result.append((username, doc["total"]))
 
     return result
 
 
 # ---------- GLOBAL USER LEADERBOARD ----------
-async def get_global_top(mode):
+async def get_global_top(client, mode):
 
     query = {}
 
@@ -86,14 +107,14 @@ async def get_global_top(mode):
     cursor = db.messages.aggregate(pipeline)
 
     async for doc in cursor:
-        username = await resolve_user(doc["_id"])
+        username = await resolve_user(client, doc["_id"])
         result.append((username, doc["total"]))
 
     return result
 
 
 # ---------- TOP GROUPS ----------
-async def get_top_groups(mode):
+async def get_top_groups(client, mode):
 
     query = {}
 
@@ -121,14 +142,16 @@ async def get_top_groups(mode):
     cursor = db.messages.aggregate(pipeline)
 
     async for doc in cursor:
-        title = await resolve_group(doc["_id"])
+        title = await resolve_group(client, doc["_id"])
         result.append((title, doc["total"]))
 
     return result
 
 
 # ---------- MY TOP GROUPS ----------
-async def get_user_groups(user_id):
+async def get_user_groups(client, user_id):
+
+    user_id = int(user_id)
 
     pipeline = [
         {"$match": {"user_id": user_id}},
@@ -146,7 +169,7 @@ async def get_user_groups(user_id):
     cursor = db.messages.aggregate(pipeline)
 
     async for doc in cursor:
-        title = await resolve_group(doc["_id"])
+        title = await resolve_group(client, doc["_id"])
         result.append((title, doc["total"]))
 
     return result
