@@ -1,12 +1,12 @@
 from pyrogram import filters
 from pyrogram.handlers import MessageHandler
 from pyrogram.enums import ParseMode
-from database.connection import get_global_leaderboard, get_user_info
+import database as db
 
 
 async def topusers_cmd(client, message):
 
-    data = get_global_leaderboard("overall")
+    data = db.get_global_leaderboard("overall")
 
     if not data:
         await message.reply("📊 No data found.")
@@ -16,14 +16,11 @@ async def topusers_cmd(client, message):
 
     for i, (user_id, total) in enumerate(data, start=1):
 
-        user_info = get_user_info(user_id)
+        user_info = db.get_user_info(user_id)
 
         if user_info:
-            name = user_info.get("username")
-            if name:
-                display = f"@{name}"
-            else:
-                display = user_info.get("full_name", "User")
+            username = user_info.get("username")
+            display = f"@{username}" if username else user_info.get("full_name", "User")
         else:
             display = "User"
 
@@ -31,7 +28,10 @@ async def topusers_cmd(client, message):
 
         text += f"{medal} <a href='tg://user?id={user_id}'>{display}</a> • {total}\n"
 
-    await message.reply(text, parse_mode=ParseMode.HTML)
+    await message.reply(
+        text,
+        parse_mode=ParseMode.HTML
+    )
 
 
 topusers_handler = MessageHandler(
