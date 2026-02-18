@@ -1,5 +1,6 @@
 from pyrogram import filters
 from pyrogram.handlers import MessageHandler
+from pyrogram.enums import ParseMode
 from services.leaderboard_service import get_top_groups
 from ui.keyboards import ranking_keyboard
 
@@ -21,7 +22,7 @@ async def topgroups_cmd(client, message):
     await message.reply(
         text,
         reply_markup=ranking_keyboard("overall", "groups", 0),
-        parse_mode="HTML"
+        parse_mode=ParseMode.HTML
     )
 
 
