@@ -2,19 +2,34 @@ from pyrogram import filters
 from pyrogram.handlers import MessageHandler
 from services.leaderboard_service import get_group_top
 from ui.keyboards import ranking_keyboard
-from services.formatting_service import format_leaderboard
+
 
 async def rankings_cmd(client, message):
 
     if message.chat.type not in ["group", "supergroup"]:
+        await message.reply("❌ This command works only in groups.")
         return
 
-    data = await get_group_top(message.chat.id, "overall")
-    text = await format_leaderboard(data, "LEADERBOARD")
+    group_id = message.chat.id  # Important: int
+
+    data = await get_group_top(group_id, "overall")
+
+    if not data:
+        await message.reply("📊 No ranking data found.")
+        return
+
+    text = "🏆 GROUP LEADERBOARD\n\n"
+
+    for i, (username, total) in enumerate(data, start=1):
+        text += f"{i}. {username} • {total}\n"
 
     await message.reply(
         text,
-        reply_markup=ranking_keyboard("overall", "group", message.chat.id)
+        reply_markup=ranking_keyboard("overall", "group", group_id)
     )
 
-rankings_handler = MessageHandler(rankings_cmd, filters.command("rankings"))
+
+rankings_handler = MessageHandler(
+    rankings_cmd,
+    filters.command("rankings") & filters.group
+)
