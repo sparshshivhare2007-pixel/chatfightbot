@@ -1,7 +1,6 @@
 import asyncio
 import signal
 import sys
-import uvloop
 from pyrogram import Client
 from config import API_ID, API_HASH, BOT_TOKEN
 from core.router import register_handlers
@@ -18,7 +17,7 @@ class ChatFightBot:
     async def start(self):
         logger.info("Starting ChatFight Pro...")
 
-        # Create client INSIDE running loop
+        # Create client inside running loop
         self.app = Client(
             "chatfight-pro",
             api_id=API_ID,
@@ -60,8 +59,6 @@ class ChatFightBot:
 
 
 if __name__ == "__main__":
-    uvloop.install()
-
     try:
         asyncio.run(ChatFightBot().run())
     except (KeyboardInterrupt, SystemExit):
