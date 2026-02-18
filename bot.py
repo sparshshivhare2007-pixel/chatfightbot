@@ -10,10 +10,6 @@ from database.indexes import create_indexes
 from utils.logger import logger
 
 
-# Use ultra fast event loop
-asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-
-
 class ChatFightBot:
 
     def __init__(self):
@@ -22,23 +18,17 @@ class ChatFightBot:
             api_id=API_ID,
             api_hash=API_HASH,
             bot_token=BOT_TOKEN,
-            workers=100,               # high concurrency
+            workers=100,
             sleep_threshold=30
         )
 
     async def start(self):
         logger.info("Starting ChatFight Pro...")
 
-        # Register command + callback handlers
         register_handlers(self.app)
-
-        # Create Mongo indexes (background safe)
         await create_indexes()
-
-        # Start scheduler (daily/weekly reset)
         start_scheduler()
 
-        # Start Pyrogram
         await self.app.start()
 
         me = await self.app.get_me()
@@ -52,28 +42,26 @@ class ChatFightBot:
     async def run(self):
         await self.start()
 
-        # Graceful shutdown handling
-        loop = asyncio.get_running_loop()
-
         stop_event = asyncio.Event()
 
-        def _signal_handler():
+        def shutdown():
             logger.info("Shutdown signal received.")
             stop_event.set()
 
-        for sig in (signal.SIGINT, signal.SIGTERM):
-            loop.add_signal_handler(sig, _signal_handler)
+        loop = asyncio.get_running_loop()
+        loop.add_signal_handler(signal.SIGINT, shutdown)
+        loop.add_signal_handler(signal.SIGTERM, shutdown)
 
         await stop_event.wait()
         await self.stop()
 
 
-# Entry Point
 if __name__ == "__main__":
-    bot = ChatFightBot()
+    # 🔥 Correct uvloop setup (no conflict)
+    uvloop.install()
 
     try:
-        asyncio.run(bot.run())
+        asyncio.run(ChatFightBot().run())
     except (KeyboardInterrupt, SystemExit):
         logger.info("Bot exited manually.")
         sys.exit(0)
