@@ -1,7 +1,7 @@
 from pyrogram import filters
 from pyrogram.handlers import MessageHandler
 from pyrogram.enums import ChatType, ParseMode
-from database.connection import get_leaderboard, get_user_info
+import database as db
 from ui.keyboards import ranking_keyboard
 
 
@@ -13,7 +13,7 @@ async def rankings_cmd(client, message):
 
     group_id = message.chat.id
 
-    data = get_leaderboard(group_id, "overall")
+    data = db.get_leaderboard(group_id, "overall")
 
     if not data:
         await message.reply("📊 No ranking data found.")
@@ -23,14 +23,11 @@ async def rankings_cmd(client, message):
 
     for i, (user_id, total) in enumerate(data, start=1):
 
-        user_info = get_user_info(user_id)
+        user_info = db.get_user_info(user_id)
 
         if user_info:
-            name = user_info.get("username")
-            if name:
-                display = f"@{name}"
-            else:
-                display = user_info.get("full_name", "User")
+            username = user_info.get("username")
+            display = f"@{username}" if username else user_info.get("full_name", "User")
         else:
             display = "User"
 
