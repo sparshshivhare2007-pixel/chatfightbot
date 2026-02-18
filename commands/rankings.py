@@ -1,20 +1,18 @@
-from pyrogram import filters
+=from pyrogram import filters
 from pyrogram.handlers import MessageHandler
-from pyrogram.enums import ChatType
 from services.leaderboard_service import get_group_top
 from ui.keyboards import ranking_keyboard
 
 
 async def rankings_cmd(client, message):
 
-    # Ensure command runs only in groups/supergroups
-    if message.chat.type not in [ChatType.GROUP, ChatType.SUPERGROUP]:
+    # v1 compatible group check
+    if message.chat.type not in ["group", "supergroup"]:
         await message.reply("❌ This command works only in groups.")
         return
 
     group_id = int(message.chat.id)
 
-    # Fetch leaderboard (client required)
     data = await get_group_top(client, group_id, "overall")
 
     if not data:
@@ -39,11 +37,11 @@ async def rankings_cmd(client, message):
     await message.reply(
         text,
         reply_markup=ranking_keyboard("overall", "group", group_id),
-        parse_mode="HTML"
+        parse_mode="html"   # lowercase for v1
     )
 
 
 rankings_handler = MessageHandler(
     rankings_cmd,
-    filters.command("rankings")
+    filters.command("rankings") & filters.group
 )
