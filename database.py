@@ -17,7 +17,7 @@ groups_col = db["groups"]
 events_col = db["events"]
 
 # =========================
-# Redis Connection (ADDED)
+# Redis Connection
 # =========================
 
 redis_client = redis.Redis(
@@ -316,3 +316,28 @@ def get_total_global_messages(mode="overall"):
 
 def get_global_user_count():
     return users_col.count_documents({})
+
+# =========================
+# REQUIRED BY COUNTER SERVICE
+# =========================
+
+async def update_user_group(user_id: int, group_id: int):
+    users_col.update_one(
+        {"user_id": user_id},
+        {"$setOnInsert": {"user_id": user_id}},
+        upsert=True
+    )
+
+async def update_group(group_id: int):
+    groups_col.update_one(
+        {"group_id": group_id},
+        {"$setOnInsert": {"group_id": group_id}},
+        upsert=True
+    )
+
+async def update_global(user_id: int):
+    users_col.update_one(
+        {"user_id": user_id},
+        {"$setOnInsert": {"user_id": user_id}},
+        upsert=True
+    )
