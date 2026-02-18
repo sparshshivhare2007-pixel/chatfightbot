@@ -1,0 +1,4 @@
+PRIMARY_COLOR = "#ff3b3b"
+SECONDARY_COLOR = "#1f1f1f"
+TEXT_COLOR = "#ffffff"
+BAR_COLOR = "#ff4747"
