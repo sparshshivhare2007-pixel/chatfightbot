@@ -24,10 +24,9 @@ def generate_top_groups(mode="overall"):
     for i, (group_id, total) in enumerate(data, start=1):
 
         group_info = db.get_group_info(group_id)
-
         title = group_info.get("title", "Group") if group_info else "Group"
-        safe_title = html.escape(title)
 
+        safe_title = html.escape(title)
         medal = medals[i - 1] if i <= 3 else f"{i}."
 
         text += f"{medal} {safe_title} • <b>{total}</b>\n"
@@ -51,7 +50,7 @@ async def topgroups_cmd(client, message):
 
     await message.reply(
         text,
-        reply_markup=global_ranking_keyboard(mode),
+        reply_markup=topgroups_keyboard(mode),
         parse_mode=ParseMode.HTML,
         disable_web_page_preview=True
     )
@@ -63,11 +62,14 @@ async def topgroups_cmd(client, message):
 
 async def topgroups_callback(client, callback_query):
 
-    await callback_query.answer()
+    try:
+        await callback_query.answer()
+    except:
+        return
 
     try:
         _, mode = callback_query.data.split(":")
-    except Exception:
+    except:
         return
 
     text = generate_top_groups(mode)
@@ -95,5 +97,5 @@ topgroups_handler = MessageHandler(
 
 topgroups_callback_handler = CallbackQueryHandler(
     topgroups_callback,
-    filters.regex("^globalrank:")
+    filters.regex("^topgroups:")
 )
