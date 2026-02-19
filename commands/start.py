@@ -9,7 +9,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 START_IMAGE = "https://files.catbox.moe/sscl7n.jpg"        # Start image link
 SETTINGS_IMAGE = "https://files.catbox.moe/sscl7n.jpg"     # Settings image link
 
-SUPPORT_LINK = "https://t.me/YOUR_SUPPORT_GROUP"          # Apna support group link daalo
+SUPPORT_LINK = "https://t.me/Newchatfightsupport"          # Apna support group link daalo
 
 
 # =========================
