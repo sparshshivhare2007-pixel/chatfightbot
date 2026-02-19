@@ -2,7 +2,6 @@ from pymongo import MongoClient, ASCENDING
 from config import MONGO_URI
 from datetime import datetime, timedelta
 import pytz
-import redis
 
 # =========================
 # Mongo Connection
@@ -15,17 +14,6 @@ messages_col = db["messages"]
 users_col = db["users"]
 groups_col = db["groups"]
 events_col = db["events"]
-
-# =========================
-# Redis (Optional – Not used for leaderboard)
-# =========================
-
-redis_client = redis.Redis(
-    host="localhost",
-    port=6379,
-    db=0,
-    decode_responses=True
-)
 
 # =========================
 # Indexes
@@ -70,14 +58,13 @@ def _build_date_filter(mode):
     return {}
 
 # =========================
-# MESSAGE COUNTER (Mongo Based)
+# MESSAGE COUNTER
 # =========================
 
 def increment_message(user, chat):
 
     today = _get_today()
 
-    # Count message
     messages_col.update_one(
         {
             "user_id": user.id,
@@ -95,7 +82,7 @@ def increment_message(user, chat):
         upsert=True
     )
 
-    # Save user info safely (Pyrogram v2 fix)
+    # Safe name build (Pyrogram v2 compatible)
     full_name = f"{user.first_name or ''} {user.last_name or ''}".strip()
     if not full_name:
         full_name = "User"
@@ -111,7 +98,6 @@ def increment_message(user, chat):
         upsert=True
     )
 
-    # Save group info
     groups_col.update_one(
         {"group_id": chat.id},
         {
@@ -123,29 +109,6 @@ def increment_message(user, chat):
     )
 
 # =========================
-# TOP GROUPS
-# =========================
-
-def get_top_groups(mode="overall"):
-
-    match_stage = _build_date_filter(mode)
-
-    pipeline = [
-        {"$match": match_stage},
-        {
-            "$group": {
-                "_id": "$group_id",
-                "total": {"$sum": "$count"}
-            }
-        },
-        {"$sort": {"total": -1}},
-        {"$limit": 10}
-    ]
-
-    results = list(messages_col.aggregate(pipeline))
-    return [(r["_id"], r["total"]) for r in results]
-
-# =========================
 # USER / GROUP INFO
 # =========================
 
@@ -155,27 +118,6 @@ def get_user_info(user_id: int):
 
 def get_group_info(group_id: int):
     return groups_col.find_one({"group_id": group_id})
-
-# =========================
-# EVENT BONUS SYSTEM
-# =========================
-
-def add_bonus_points(user_id: int, group_id: int, points: int):
-
-    events_col.update_one(
-        {"user_id": user_id, "group_id": group_id},
-        {"$inc": {"points": points}},
-        upsert=True
-    )
-
-
-def get_event_points(user_id: int, group_id: int):
-
-    data = events_col.find_one(
-        {"user_id": user_id, "group_id": group_id}
-    )
-
-    return data["points"] if data and "points" in data else 0
 
 # =========================
 # GROUP LEADERBOARD
@@ -214,6 +156,29 @@ def get_global_leaderboard(mode="overall"):
         {
             "$group": {
                 "_id": "$user_id",
+                "total": {"$sum": "$count"}
+            }
+        },
+        {"$sort": {"total": -1}},
+        {"$limit": 10}
+    ]
+
+    results = list(messages_col.aggregate(pipeline))
+    return [(r["_id"], r["total"]) for r in results]
+
+# =========================
+# TOP GROUPS
+# =========================
+
+def get_top_groups(mode="overall"):
+
+    match_stage = _build_date_filter(mode)
+
+    pipeline = [
+        {"$match": match_stage},
+        {
+            "$group": {
+                "_id": "$group_id",
                 "total": {"$sum": "$count"}
             }
         },
