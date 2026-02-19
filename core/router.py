@@ -5,7 +5,9 @@ from core.callback_listener import callback_handler
 
 def register_handlers(app):
 
-    # Command Handlers
+    # =========================
+    # COMMAND HANDLERS
+    # =========================
     app.add_handler(start.start_handler)
     app.add_handler(rankings.rankings_handler)
     app.add_handler(topusers.topusers_handler)
@@ -13,11 +15,16 @@ def register_handlers(app):
     app.add_handler(mytop.mytop_handler)
     app.add_handler(settings.settings_handler)
 
-    # Rankings Callback (IMPORTANT for switching)
+    # =========================
+    # CALLBACK HANDLERS
+    # =========================
     app.add_handler(rankings.rankings_callback_handler)
+    app.add_handler(topusers.topusers_callback_handler)
 
-    # Message Counter
-    app.add_handler(message_counter)
-
-    # Other Callback Handlers
+    # Other callback handlers (settings, etc.)
     app.add_handler(callback_handler)
+
+    # =========================
+    # MESSAGE COUNTER
+    # =========================
+    app.add_handler(message_counter)
