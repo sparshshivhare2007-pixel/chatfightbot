@@ -1,6 +1,7 @@
 import asyncio
 import signal
 import sys
+
 from pyrogram import Client
 from pyrogram.enums import ParseMode
 
@@ -13,33 +14,33 @@ from utils.logger import logger
 class ChatFightBot:
 
     def __init__(self):
-        self.app = None
+        self.app: Client | None = None
 
     async def start(self):
         logger.info("Starting ChatFight Pro...")
 
-        # Create Pyrogram client (NO SQLITE SESSION)
+        # Create Pyrogram Client (No SQLite session file)
         self.app = Client(
             name="chatfight_session",
             api_id=API_ID,
             api_hash=API_HASH,
             bot_token=BOT_TOKEN,
-            workers=10,
+            workers=20,
             parse_mode=ParseMode.HTML,
-            in_memory=True  # 🔥 Prevents database locked error
+            in_memory=True  # Prevent session DB lock
         )
 
-        # Register handlers
+        # Register all handlers
         register_handlers(self.app)
 
-        # Start bot first
+        # Start bot
         await self.app.start()
 
-        # Start scheduler AFTER bot starts
+        # Start scheduler AFTER bot is running
         start_scheduler()
 
         me = await self.app.get_me()
-        logger.info(f"Bot started as @{me.username}")
+        logger.info(f"Bot started successfully as @{me.username}")
 
     async def stop(self):
         logger.info("Stopping ChatFight Pro...")
@@ -47,7 +48,7 @@ class ChatFightBot:
         if self.app:
             await self.app.stop()
 
-        logger.info("Bot stopped successfully.")
+        logger.info("Bot stopped cleanly.")
 
     async def run(self):
         await self.start()
@@ -59,8 +60,14 @@ class ChatFightBot:
             stop_event.set()
 
         loop = asyncio.get_running_loop()
-        loop.add_signal_handler(signal.SIGINT, shutdown)
-        loop.add_signal_handler(signal.SIGTERM, shutdown)
+
+        # Graceful shutdown signals (Linux)
+        try:
+            loop.add_signal_handler(signal.SIGINT, shutdown)
+            loop.add_signal_handler(signal.SIGTERM, shutdown)
+        except NotImplementedError:
+            # Windows fallback
+            pass
 
         await stop_event.wait()
         await self.stop()
