@@ -22,7 +22,7 @@ def build_name(user_id, user_info):
 
 
 # =========================
-# Helper: Generate Leaderboard Text
+# Helper: Generate Leaderboard
 # =========================
 
 def generate_leaderboard(group_id: int, mode: str):
@@ -81,12 +81,16 @@ async def rankings_cmd(client, message):
 
 
 # =========================
-# Callback Switching
+# Callback Switching (SAFE)
 # =========================
 
 async def rankings_callback(client, callback_query):
 
-    await callback_query.answer()
+    # 🔹 Always answer immediately (prevent QUERY_ID_INVALID)
+    try:
+        await callback_query.answer()
+    except:
+        return
 
     try:
         _, scope, mode, target_id = callback_query.data.split(":")
@@ -97,15 +101,21 @@ async def rankings_callback(client, callback_query):
     text = generate_leaderboard(group_id, mode)
 
     if not text:
-        await callback_query.message.edit_text("📊 No ranking data found.")
+        try:
+            await callback_query.message.edit_text("📊 No ranking data found.")
+        except:
+            pass
         return
 
-    await callback_query.message.edit_text(
-        text,
-        reply_markup=ranking_keyboard(mode, scope, group_id),
-        parse_mode=ParseMode.HTML,
-        disable_web_page_preview=True
-    )
+    try:
+        await callback_query.message.edit_text(
+            text,
+            reply_markup=ranking_keyboard(mode, scope, group_id),
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True
+        )
+    except:
+        pass
 
 
 # =========================
