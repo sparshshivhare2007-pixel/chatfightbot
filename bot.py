@@ -18,30 +18,35 @@ class ChatFightBot:
     async def start(self):
         logger.info("Starting ChatFight Pro...")
 
-        # Create Pyrogram client
+        # Create Pyrogram client (NO SQLITE SESSION)
         self.app = Client(
-            "chatfight-pro",
+            name="chatfight_session",
             api_id=API_ID,
             api_hash=API_HASH,
             bot_token=BOT_TOKEN,
-            workers=20,
-            parse_mode=ParseMode.HTML
+            workers=10,
+            parse_mode=ParseMode.HTML,
+            in_memory=True  # 🔥 Prevents database locked error
         )
 
+        # Register handlers
         register_handlers(self.app)
 
-        # Scheduler start
-        start_scheduler()
-
+        # Start bot first
         await self.app.start()
+
+        # Start scheduler AFTER bot starts
+        start_scheduler()
 
         me = await self.app.get_me()
         logger.info(f"Bot started as @{me.username}")
 
     async def stop(self):
         logger.info("Stopping ChatFight Pro...")
+
         if self.app:
             await self.app.stop()
+
         logger.info("Bot stopped successfully.")
 
     async def run(self):
