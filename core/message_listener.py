@@ -1,7 +1,7 @@
 from pyrogram import filters
 from pyrogram.handlers import MessageHandler
 from pyrogram.enums import ChatType
-from services.counter_service import increment_counter
+from database import increment_message
 
 
 async def count_messages(client, message):
