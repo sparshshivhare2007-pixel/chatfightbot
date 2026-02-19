@@ -1,23 +1,21 @@
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
-def ranking_keyboard(mode, scope, target_id):
+def ranking_keyboard(mode: str, scope: str, target_id: int):
 
-    def btn(text, m):
-        if m == mode:
-            return InlineKeyboardButton(
-                f"🔘 {text}",
-                callback_data=f"rank:{scope}:{m}:{target_id}"
-            )
+    def button(text: str, key: str):
+
+        is_active = key == mode
+
         return InlineKeyboardButton(
-            text,
-            callback_data=f"rank:{scope}:{m}:{target_id}"
+            text=f"{'🟢' if is_active else '⚪'} {text}",
+            callback_data=f"rank:{scope}:{key}:{target_id}"
         )
 
     return InlineKeyboardMarkup([
         [
-            btn("Overall", "overall"),
-            btn("Today", "today"),
-            btn("Week", "week")
+            button("Overall", "overall"),
+            button("Today", "today"),
+            button("Week", "week")
         ]
     ])
