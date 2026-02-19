@@ -19,6 +19,7 @@ def register_handlers(app):
     # CALLBACK HANDLERS
     # =========================
     app.add_handler(rankings.rankings_callback_handler)
+    app.add_handler(topgroups.topgroups_callback_handler)
     app.add_handler(topusers.topusers_callback_handler)
 
     # Other callback handlers (settings, etc.)
