@@ -3,7 +3,7 @@ from pyrogram import filters
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.enums import ParseMode
 import database as db
-from ui.keyboards import global_ranking_keyboard
+from ui.keyboards import topusers_keyboard
 
 
 # =========================
@@ -22,7 +22,7 @@ def build_name(user_id, user_info):
 
 
 # =========================
-# Generate Global Leaderboard
+# Generate Global User Leaderboard
 # =========================
 
 def generate_global_leaderboard(mode="overall"):
@@ -49,7 +49,7 @@ def generate_global_leaderboard(mode="overall"):
 
 
 # =========================
-# Command Handler
+# Command
 # =========================
 
 async def topusers_cmd(client, message):
@@ -64,19 +64,22 @@ async def topusers_cmd(client, message):
 
     await message.reply(
         text,
-        reply_markup=global_ranking_keyboard(mode),
+        reply_markup=topusers_keyboard(mode),
         parse_mode=ParseMode.HTML,
         disable_web_page_preview=True
     )
 
 
 # =========================
-# Callback Handler (Fast Switching)
+# Callback (Fast Switching)
 # =========================
 
 async def topusers_callback(client, callback_query):
 
-    await callback_query.answer()
+    try:
+        await callback_query.answer()
+    except:
+        return
 
     try:
         _, mode = callback_query.data.split(":")
@@ -91,7 +94,7 @@ async def topusers_callback(client, callback_query):
 
     await callback_query.message.edit_text(
         text,
-        reply_markup=global_ranking_keyboard(mode),
+        reply_markup=topusers_keyboard(mode),
         parse_mode=ParseMode.HTML,
         disable_web_page_preview=True
     )
@@ -108,5 +111,5 @@ topusers_handler = MessageHandler(
 
 topusers_callback_handler = CallbackQueryHandler(
     topusers_callback,
-    filters.regex("^globalrank:")
+    filters.regex("^topusers:")
 )
