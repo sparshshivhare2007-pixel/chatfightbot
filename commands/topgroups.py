@@ -1,41 +1,99 @@
+import html
 from pyrogram import filters
-from pyrogram.handlers import MessageHandler
+from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.enums import ParseMode
 import database as db
-from ui.keyboards import ranking_keyboard
+from ui.keyboards import global_ranking_keyboard
 
 
-async def topgroups_cmd(client, message):
+# =========================
+# Generate Top Groups Text
+# =========================
 
-    data = db.get_top_groups("overall")
+def generate_top_groups(mode="overall"):
+
+    data = db.get_top_groups(mode)
 
     if not data:
-        await message.reply("📊 No data found.")
-        return
+        return None
 
-    text = "🏆 <b>TOP GROUPS</b>\n\n"
+    text = f"🏆 <b>TOP GROUPS ({mode.upper()})</b>\n\n"
+
+    medals = ["🥇", "🥈", "🥉"]
 
     for i, (group_id, total) in enumerate(data, start=1):
 
         group_info = db.get_group_info(group_id)
 
-        if group_info:
-            title = group_info.get("title", "Group")
-        else:
-            title = "Group"
+        title = group_info.get("title", "Group") if group_info else "Group"
+        safe_title = html.escape(title)
 
-        medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+        medal = medals[i - 1] if i <= 3 else f"{i}."
 
-        text += f"{medal} {title} • {total}\n"
+        text += f"{medal} {safe_title} • <b>{total}</b>\n"
+
+    return text
+
+
+# =========================
+# Command
+# =========================
+
+async def topgroups_cmd(client, message):
+
+    mode = "overall"
+
+    text = generate_top_groups(mode)
+
+    if not text:
+        await message.reply("📊 No ranking data found.")
+        return
 
     await message.reply(
         text,
-        reply_markup=ranking_keyboard("overall", "groups", 0),
-        parse_mode=ParseMode.HTML
+        reply_markup=global_ranking_keyboard(mode),
+        parse_mode=ParseMode.HTML,
+        disable_web_page_preview=True
     )
 
+
+# =========================
+# Callback (Fast Switching)
+# =========================
+
+async def topgroups_callback(client, callback_query):
+
+    await callback_query.answer()
+
+    try:
+        _, mode = callback_query.data.split(":")
+    except Exception:
+        return
+
+    text = generate_top_groups(mode)
+
+    if not text:
+        await callback_query.message.edit_text("📊 No ranking data found.")
+        return
+
+    await callback_query.message.edit_text(
+        text,
+        reply_markup=global_ranking_keyboard(mode),
+        parse_mode=ParseMode.HTML,
+        disable_web_page_preview=True
+    )
+
+
+# =========================
+# Handlers
+# =========================
 
 topgroups_handler = MessageHandler(
     topgroups_cmd,
     filters.command("topgroups")
+)
+
+topgroups_callback_handler = CallbackQueryHandler(
+    topgroups_callback,
+    filters.regex("^globalrank:")
 )
