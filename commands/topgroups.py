@@ -3,7 +3,7 @@ from pyrogram import filters
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.enums import ParseMode
 import database as db
-from ui.keyboards import global_ranking_keyboard
+from ui.keyboards import topgroups_keyboard
 
 
 # =========================
@@ -78,7 +78,7 @@ async def topgroups_callback(client, callback_query):
 
     await callback_query.message.edit_text(
         text,
-        reply_markup=global_ranking_keyboard(mode),
+        reply_markup=topgroups_keyboard(mode),
         parse_mode=ParseMode.HTML,
         disable_web_page_preview=True
     )
