@@ -18,11 +18,21 @@ def register_handlers(app):
     # =========================
     # CALLBACK HANDLERS
     # =========================
+
+    # Start.py callbacks (IMPORTANT)
+    app.add_handler(start.settings_handler)
+    app.add_handler(start.back_handler)
+
+    # Rankings
     app.add_handler(rankings.rankings_callback_handler)
-    app.add_handler(topgroups.topgroups_callback_handler)
+
+    # Top Users
     app.add_handler(topusers.topusers_callback_handler)
 
-    # Other callback handlers (settings, etc.)
+    # Top Groups
+    app.add_handler(topgroups.topgroups_callback_handler)
+
+    # Other generic callbacks (if any)
     app.add_handler(callback_handler)
 
     # =========================
